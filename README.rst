@@ -2,6 +2,10 @@
 Responses helpers
 =================
 
+.. image:: https://circleci.com/gh/novafloss/responses-helpers.svg?style=shield
+   :target: https://circleci.com/gh/novafloss/responses-helpers
+   :alt: We are under CI!!
+
 Aims to provide an easy way to mock an entire service API based on `responses`_
 and a simple dict definition of a service. The idea is to mock everything at
 start according the definition. Then `responses-helpers`_ permits to
