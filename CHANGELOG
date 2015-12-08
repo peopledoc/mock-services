@@ -4,6 +4,7 @@ Changelog
 0.1 (unreleased)
 ----------------
 
+- Add service behaviour
 - Add CI shield
 - Add make release
 - Add first implementation

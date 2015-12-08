@@ -28,6 +28,7 @@ setup(
     url='https://github.com/novafloss/responses-helpers',
     license='MIT',
     install_requires=[
+        'attrs',
         'funcsigs',
         'responses',
         'setuptools>=17.1',

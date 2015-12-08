@@ -2,10 +2,20 @@
 import logging
 import re
 
+from functools import partial
+
 import responses
+
+from . import service
+from . import storage
 
 
 logger = logging.getLogger(__name__)
+
+
+def reset_rules():
+    responses.reset()
+    storage.reset()
 
 
 def update_http_rules(rules, content_type='application/json'):
@@ -39,7 +49,11 @@ def update_http_rules(rules, content_type='application/json'):
     """
     for i, kw in enumerate(rules):
 
-        logger.debug('{} {}'.format(kw['method'].upper(), kw['url']))
+        if kw['method'] not in ['GET', 'POST', 'PATCH', 'DELETE']:
+            logger.error('skip! invalid method for: %s', kw)
+            continue
+
+        logger.debug('%s %s', kw['method'], kw['url'])
 
         kw['url'] = re.compile(kw['url'])
 
@@ -48,3 +62,33 @@ def update_http_rules(rules, content_type='application/json'):
 
         add_func = 'add_callback' if 'callback' in kw else 'add'
         getattr(responses, add_func)(match_querystring=True, **kw)
+
+
+def update_rest_rules(rules, content_type='application/json'):
+
+    http_rules = []
+
+    for kw in rules:
+
+        if kw['method'] not in ['LIST', 'GET', 'POST', 'PATCH', 'DELETE']:
+            logger.error('skip! invalid method for: %s', kw)
+            continue
+
+        # set callback if does not has one
+        if not 'callback' in kw:
+            _cb = getattr(service, '{0}_cb'.format(kw['method'].lower()))
+            kw['callback'] = partial(_cb, **kw.copy())
+
+        # restore standard method
+        if kw['method'] == 'LIST':
+            kw['method'] = 'GET'
+
+        # clean extra kwargs
+        _ = kw.pop('attrs', None)
+        _ = kw.pop('id_name', None)
+        _ = kw.pop('id_factory', None)
+
+        # update http_rules
+        http_rules.append(kw)
+
+    update_http_rules(rules, content_type=content_type)

@@ -73,6 +73,100 @@ Or start mocking for another function call::
     >>> please_mock_me
 
 
+You can add REST rules with an explicit method. It will add rules as above and
+automatically bind callbacks to fake a REST service. This service mock will
+create, get, update and delete resources for you::
+
+*Note:* *resource* and *id* regex options are mandatory for the tool.
+
+    >>> rest_rules = [
+    ...     {
+    ...         'method': 'LIST',
+    ...         'url': r'^http://my_fake_service/(?P<resource>api)$'
+    ...     },
+    ...     {
+    ...         'method': 'GET',
+    ...         'url': r'^http://my_fake_service/(?P<resource>api)/(?P<id>\d+)$',
+    ...     },
+    ...     {
+    ...         'method': 'GET',
+    ...         'url': r'^http://my_fake_service/(?P<resource>api)/(?P<id>\d+)/(?P<action>download)$',
+    ...     },
+    ...     {
+    ...         'method': 'POST',
+    ...         'url': r'^http://my_fake_service/(?P<resource>api)$',
+    ...         'id_name': 'id',
+    ...         'id_factory': int,
+    ...         'attrs': {
+    ...             'bar': attr.ib(),
+    ...             'foo':attr.ib(default=True)
+    ...         }
+    ...     },
+    ...     {
+    ...         'method': 'PATCH',
+    ...         'url': r'^http://my_fake_service/(?P<resource>api)/(?P<id>\d+)$',
+    ...     },
+    ...     {
+    ...         'method': 'DELETE',
+    ...         'url': r'^http://my_fake_service/(?P<resource>api)/(?P<id>\d+)$'
+    ...     },
+    ... ]
+
+    >>> from responses_helpers import update_rest_rules
+    >>> update_rest_rules(rest_rules)
+
+    >>> from responses_helpers import start_http_mock
+    >>> start_http_mock()
+
+    >>> response = requests.get('http://my_fake_service/api')
+    >>> response.status_code
+    200
+    >>> response.json()
+    []
+
+    >>> response = requests.get('http://my_fake_service/api/1')
+    >>> response.status_code
+    404
+
+    >>> response = requests.post('http://my_fake_service/api',
+    ...                          data=json.dumps({}),
+    ...                          headers={'content-type': 'application/json'})
+    >>> response.status_code
+    400
+
+    >>> response = requests.post('http://my_fake_service/api',
+    ...                          data=json.dumps({'bar': 'Python will save the world'}),
+    ...                          headers={'content-type': 'application/json'})
+    >>> response.status_code
+    201
+    >>> response.json()
+    {
+      'id': 1,
+      'foo'; True,
+      'bar'; 'Python will save the world.'
+    }
+
+    >>> response = requests.patch('http://my_fake_service/api/1',
+    ...                           data=json.dumps({'bar': "Python will save the world. I don't know how. But it will."}),
+    ...                           headers={'content-type': 'application/json'})
+    >>> response.status_code
+    200
+
+    >>> response = requests.get('http://my_fake_service/api/1')
+    >>> response.status_code
+    200
+    >>> response.json()
+    {
+      'id': 1,
+      'foo'; True,
+      'bar'; "Python will save the world. I don't know how. But it will."
+    }
+
+    >>> response = requests.delete('http://my_fake_service/api/1')
+    >>> response.status_code
+    204
+
+
 Have fun in testing external APIs ;)
 
 
