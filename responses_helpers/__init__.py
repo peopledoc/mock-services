@@ -1,3 +1,6 @@
+# -*- coding: utf-8 -*-
+import pkg_resources
+
 from .rules import update_http_rules
 
 from .mock import is_http_mock_started
@@ -6,6 +9,7 @@ from .mock import stop_http_mock
 
 from .decorators import no_http_mock
 from .decorators import with_http_mock
+
 
 __all__ = [
     'update_http_rules',
@@ -17,3 +21,5 @@ __all__ = [
     'no_http_mock',
     'with_http_mock',
 ]
+
+__version__ = pkg_resources.get_distribution(__package__).version

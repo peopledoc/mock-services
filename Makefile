@@ -6,9 +6,13 @@ install:
 
 .PHONY: develop
 develop: install
-	pip install flake8
+	pip install -e ".[test]"
 
 .PHONY: tests
 tests:
-	flake8 .
 	python -m unittest discover tests/
+
+.PHONY: release
+release:
+	pip install -e ".[release]"
+	fullrelease
