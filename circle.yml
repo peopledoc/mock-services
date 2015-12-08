@@ -1,0 +1,13 @@
+machine:
+  python:
+    version: 2.7.3
+
+dependencies:
+  pre:
+    - pip install -U setuptools
+  override:
+    - make develop
+
+test:
+  override:
+    - make tests
