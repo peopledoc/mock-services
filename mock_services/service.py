@@ -15,6 +15,7 @@ from .exceptions import Http404
 
 logger = logging.getLogger(__name__)
 
+
 @attr.s
 class ResourceContext(object):
     hostname = attr.ib()
