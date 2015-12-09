@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import json
+import logging
 
 from functools import wraps
 
@@ -12,6 +13,9 @@ from .exceptions import Http409
 from .exceptions import Http500
 from .mock import start_http_mock
 from .mock import stop_http_mock
+
+
+logger = logging.getLogger(__name__)
 
 
 def no_http_mock(f):
@@ -52,7 +56,8 @@ def trap_errors(f):
             return 405, {}, {'error': 'Method Not Allowed'}
         except Http409:
             return 409, {}, {'error': 'Conflict'}
-        except (Exception, Http500):
+        except (Exception, Http500) as e:
+            logger.exception(e)
             return 500, {}, {'error': 'Internal Server Error'}
     return wrapped
 
