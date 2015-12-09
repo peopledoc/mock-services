@@ -4,6 +4,7 @@ Changelog
 0.1 (unreleased)
 ----------------
 
+- Make optional field validation
 - Fix UUID serialization
 - Enhance README
 - Rename to mock-services

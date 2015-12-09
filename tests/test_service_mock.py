@@ -41,8 +41,7 @@ rest_rules = [
         'id_name': 'id',
         'id_factory': int,
         'attrs': {
-            'bar': attr.ib(),
-            'foo': attr.ib(default=True)
+            'bar': attr.ib()
         }
     },
     {
@@ -194,6 +193,7 @@ class ResponsesHelpersServiceTestCase(unittest.TestCase):
         # add some data
 
         r = requests.post(url, data=json.dumps({
+            'foo': True,
             'bar': 'Python will save the world.',
         }), headers=CONTENTTYPE_JSON)
         self.assertEqual(r.status_code, 201)
