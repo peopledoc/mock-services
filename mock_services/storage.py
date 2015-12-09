@@ -59,7 +59,7 @@ class Storage(object):
         if id_factory == int:
             return self._counter.next()
         if id_factory == uuid.UUID:
-            return uuid.uuid4()
+            return str(uuid.uuid4())
         logger.error('invalid id factory: %s', id_factory)
         raise Http500
 

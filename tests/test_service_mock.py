@@ -1,6 +1,7 @@
 import json
 import logging
 import unittest
+import uuid
 
 import attr
 
@@ -54,6 +55,16 @@ rest_rules = [
         'method': 'DELETE',
         'url': r'^http://my_fake_service/(?P<resource>api)/(?P<id>\d+)$'
     },
+    {
+        'method': 'GET',
+        'url': r'^http://my_fake_service/(?P<resource>api/v2)/(?P<id>\w+-\w+-\w+-\w+-\w+)$',  # noqa
+    },
+    {
+        'method': 'POST',
+        'url': r'^http://my_fake_service/(?P<resource>api/v2)$',
+        'id_name': 'uuid',
+        'id_factory': uuid.UUID,
+    },
 ]
 
 
@@ -71,7 +82,7 @@ class ResponsesHelpersServiceTestCase(unittest.TestCase):
 
         update_rest_rules(rest_rules)
 
-        self.assertEqual(len(responses._default_mock._urls), 6)
+        self.assertEqual(len(responses._default_mock._urls), 8)
         for rule in responses._default_mock._urls:
             self.assertEqual(sorted(rule.keys()), [
                 'callback',
@@ -97,13 +108,13 @@ class ResponsesHelpersServiceTestCase(unittest.TestCase):
         self.assertEqual(get_rule['method'], 'GET')
         self.assertEqual(get_rule['content_type'], 'application/json')
 
-        patch_rule = responses._default_mock._urls[2]
+        get_rule = responses._default_mock._urls[2]
 
-        self.assertTrue(hasattr(patch_rule['url'], 'match'))
-        self.assertTrue(patch_rule['url'].match('http://my_fake_service/api/1/download'))  # noqa
-        self.assertTrue(hasattr(patch_rule['callback'], '__call__'))
-        self.assertEqual(patch_rule['method'], 'GET')
-        self.assertEqual(patch_rule['content_type'], 'application/json')
+        self.assertTrue(hasattr(get_rule['url'], 'match'))
+        self.assertTrue(get_rule['url'].match('http://my_fake_service/api/1/download'))  # noqa
+        self.assertTrue(hasattr(get_rule['callback'], '__call__'))
+        self.assertEqual(get_rule['method'], 'GET')
+        self.assertEqual(get_rule['content_type'], 'application/json')
 
         post_rule = responses._default_mock._urls[3]
 
@@ -129,7 +140,23 @@ class ResponsesHelpersServiceTestCase(unittest.TestCase):
         self.assertEqual(delete_rule['method'], 'DELETE')
         self.assertEqual(delete_rule['content_type'], 'application/json')
 
-    def test_rest_rules_cb(self):
+        get_rule = responses._default_mock._urls[6]
+
+        self.assertTrue(hasattr(get_rule['url'], 'match'))
+        self.assertTrue(get_rule['url'].match('http://my_fake_service/api/v2/{0}'.format(uuid.uuid4())))  # noqa
+        self.assertTrue(hasattr(get_rule['callback'], '__call__'))
+        self.assertEqual(get_rule['method'], 'GET')
+        self.assertEqual(get_rule['content_type'], 'application/json')
+
+        post_rule = responses._default_mock._urls[7]
+
+        self.assertTrue(hasattr(post_rule['url'], 'match'))
+        self.assertTrue(post_rule['url'].match('http://my_fake_service/api/v2'))  # noqa
+        self.assertTrue(hasattr(post_rule['callback'], '__call__'))
+        self.assertEqual(post_rule['method'], 'POST')
+        self.assertEqual(post_rule['content_type'], 'application/json')
+
+    def test_rest_mock(self):
 
         url = 'http://my_fake_service/api'
 
@@ -222,4 +249,37 @@ class ResponsesHelpersServiceTestCase(unittest.TestCase):
         self.assertEqual(r.headers, {'content-type': 'application/json'})
         self.assertEqual(r.json(), {
             'error': 'not found'
+        })
+
+    def test_rest_mock_with_uuid(self):
+
+        url = 'http://my_fake_service/api/v2'
+
+        update_rest_rules(rest_rules)
+        self.assertTrue(start_http_mock())
+
+        r = requests.get(url + '/{0}'.format(uuid.uuid4()))
+        self.assertEqual(r.status_code, 404)
+        self.assertEqual(r.headers, {'content-type': 'application/json'})
+        self.assertEqual(r.json(), {'error': 'not found'})
+
+        r = requests.post(url, data=json.dumps({'foo': 'bar'}),
+                          headers=CONTENTTYPE_JSON)
+        self.assertEqual(r.status_code, 201)
+        self.assertEqual(r.headers, {'content-type': 'application/json'})
+
+        data = r.json()
+        _uuid = data.get('uuid')
+        self.assertTrue(uuid.UUID(_uuid))
+        self.assertEqual(data, {
+            'uuid': _uuid,
+            'foo': 'bar',
+        })
+
+        r = requests.get(url + '/' + _uuid)
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.headers, {'content-type': 'application/json'})
+        self.assertEqual(r.json(), {
+            'uuid': _uuid,
+            'foo': 'bar',
         })
