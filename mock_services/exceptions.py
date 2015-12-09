@@ -5,7 +5,19 @@ class Http400(Exception):
     pass
 
 
+class Http401(Exception):
+    pass
+
+
+class Http403(Exception):
+    pass
+
+
 class Http404(Exception):
+    pass
+
+
+class Http405(Exception):
     pass
 
 

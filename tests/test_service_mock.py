@@ -14,6 +14,11 @@ from mock_services import start_http_mock
 from mock_services import stop_http_mock
 from mock_services import update_rest_rules
 
+from mock_services import storage
+from mock_services.exceptions import Http400
+from mock_services.exceptions import Http409
+from mock_services.service import ResourceContext
+
 
 CONTENTTYPE_JSON = {'content-type': 'application/json'}
 
@@ -61,6 +66,31 @@ rest_rules = [
         'url': r'^http://my_fake_service/(?P<resource>api/v2)$',
         'id_name': 'uuid',
         'id_factory': uuid.UUID,
+    },
+]
+
+
+def should_have_foo(request):
+    data = json.loads(request.body)
+    if 'foo' not in data:
+        raise Http400
+
+
+def duplicate_foo(request):
+    data = json.loads(request.body)
+    ctx = ResourceContext(hostname='my_fake_service', resource='api')
+    if data['foo'] in [o['foo'] for o in storage.list(ctx)]:
+        raise Http409
+
+
+rest_rules_with_validators = [
+    {
+        'method': 'POST',
+        'url': r'^http://my_fake_service/(?P<resource>api)$',
+        'validators': [
+            should_have_foo,
+            duplicate_foo,
+        ],
     },
 ]
 
@@ -168,27 +198,27 @@ class ResponsesHelpersServiceTestCase(unittest.TestCase):
         r = requests.get(url + '/1')
         self.assertEqual(r.status_code, 404)
         self.assertEqual(r.headers, {'content-type': 'application/json'})
-        self.assertEqual(r.json(), {'error': 'not found'})
+        self.assertEqual(r.json(), {'error': 'Not Found'})
 
         r = requests.get(url + '/1/download')
         self.assertEqual(r.status_code, 404)
         self.assertEqual(r.headers, {'content-type': 'application/json'})
-        self.assertEqual(r.json(), {'error': 'not found'})
+        self.assertEqual(r.json(), {'error': 'Not Found'})
 
         r = requests.post(url, data=json.dumps({}), headers=CONTENTTYPE_JSON)
         self.assertEqual(r.status_code, 400)
         self.assertEqual(r.headers, {'content-type': 'application/json'})
-        self.assertEqual(r.json(), {'error': 'validation error'})
+        self.assertEqual(r.json(), {'error': 'Bad Request'})
 
         r = requests.patch(url + '/1', data=json.dumps({}))
         self.assertEqual(r.status_code, 404)
         self.assertEqual(r.headers, {'content-type': 'application/json'})
-        self.assertEqual(r.json(), {'error': 'not found'})
+        self.assertEqual(r.json(), {'error': 'Not Found'})
 
         r = requests.delete(url + '/1')
         self.assertEqual(r.status_code, 404)
         self.assertEqual(r.headers, {'content-type': 'application/json'})
-        self.assertEqual(r.json(), {'error': 'not found'})
+        self.assertEqual(r.json(), {'error': 'Not Found'})
 
         # add some data
 
@@ -246,7 +276,7 @@ class ResponsesHelpersServiceTestCase(unittest.TestCase):
         self.assertEqual(r.status_code, 404)
         self.assertEqual(r.headers, {'content-type': 'application/json'})
         self.assertEqual(r.json(), {
-            'error': 'not found'
+            'error': 'Not Found'
         })
 
     def test_rest_mock_with_uuid(self):
@@ -259,7 +289,7 @@ class ResponsesHelpersServiceTestCase(unittest.TestCase):
         r = requests.get(url + '/{0}'.format(uuid.uuid4()))
         self.assertEqual(r.status_code, 404)
         self.assertEqual(r.headers, {'content-type': 'application/json'})
-        self.assertEqual(r.json(), {'error': 'not found'})
+        self.assertEqual(r.json(), {'error': 'Not Found'})
 
         r = requests.post(url, data=json.dumps({'foo': 'bar'}),
                           headers=CONTENTTYPE_JSON)
@@ -281,3 +311,23 @@ class ResponsesHelpersServiceTestCase(unittest.TestCase):
             'uuid': _uuid,
             'foo': 'bar',
         })
+
+    def test_validators(self):
+
+        url = 'http://my_fake_service/api'
+
+        update_rest_rules(rest_rules_with_validators)
+        self.assertTrue(start_http_mock())
+
+        r = requests.post(url, data=json.dumps({}), headers=CONTENTTYPE_JSON)
+        self.assertEqual(r.status_code, 400)
+
+        r = requests.post(url, data=json.dumps({
+            'foo': 'bar',
+        }), headers=CONTENTTYPE_JSON)
+        self.assertEqual(r.status_code, 201)
+
+        r = requests.post(url, data=json.dumps({
+            'foo': 'bar',
+        }), headers=CONTENTTYPE_JSON)
+        self.assertEqual(r.status_code, 409)
