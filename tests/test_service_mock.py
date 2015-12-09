@@ -5,8 +5,6 @@ import uuid
 
 import attr
 
-from requests import Request
-
 import requests
 
 import responses
@@ -44,7 +42,7 @@ rest_rules = [
         'id_factory': int,
         'attrs': {
             'bar': attr.ib(),
-            'foo':attr.ib(default=True)
+            'foo': attr.ib(default=True)
         }
     },
     {
@@ -227,7 +225,7 @@ class ResponsesHelpersServiceTestCase(unittest.TestCase):
         self.assertEqual(r.json(), {
             'id': 1,
             'foo': True,
-            'bar': "Python will save the world. I don't know how. But it will.",
+            'bar': "Python will save the world. I don't know how. But it will.",  # noqa
         })
 
         r = requests.get(url + '/1')
@@ -236,7 +234,7 @@ class ResponsesHelpersServiceTestCase(unittest.TestCase):
         self.assertEqual(r.json(), {
             'id': 1,
             'foo': True,
-            'bar': "Python will save the world. I don't know how. But it will.",
+            'bar': "Python will save the world. I don't know how. But it will.",  # noqa
         })
 
         r = requests.delete(url + '/1')
