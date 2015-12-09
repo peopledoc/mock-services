@@ -2,6 +2,8 @@
 import pkg_resources
 
 from .rules import update_http_rules
+from .rules import update_rest_rules
+from .rules import reset_rules
 
 from .mock import is_http_mock_started
 from .mock import start_http_mock
@@ -12,7 +14,9 @@ from .decorators import with_http_mock
 
 
 __all__ = [
+    'reset_rules',
     'update_http_rules',
+    'update_rest_rules',
 
     'is_http_mock_started',
     'start_http_mock',

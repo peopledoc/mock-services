@@ -1,14 +1,14 @@
-=================
-Responses helpers
-=================
+=============
+Mock services
+=============
 
-.. image:: https://circleci.com/gh/novafloss/responses-helpers.svg?style=shield
-   :target: https://circleci.com/gh/novafloss/responses-helpers
+.. image:: https://circleci.com/gh/novafloss/mock-services.svg?style=shield
+   :target: https://circleci.com/gh/novafloss/mock-services
    :alt: We are under CI!!
 
 Aims to provide an easy way to mock an entire service API based on `responses`_
 and a simple dict definition of a service. The idea is to mock everything at
-start according the definition. Then `responses-helpers`_ permits to
+start according the definition. Then `mock-services`_ permits to
 *start/stop* mock locally.
 
 *Note:* rules urls must be regex. They always will be compiled before updating
@@ -28,14 +28,14 @@ Let's mock our favorite search engine::
     ...     },
     ... ]
 
-    >>> from responses_helpers import update_http_rules
+    >>> from mock_services import update_http_rules
     >>> update_http_rules(rules)
 
     >>> import requests
     >>> requests.get('https://duckduckgo.com/?q=responses').content[:15]
     '<!DOCTYPE html>'
 
-    >>> from responses_helpers import start_http_mock
+    >>> from mock_services import start_http_mock
     >>> start_http_mock()
 
     >>> requests.get('https://duckduckgo.com/?q=responses').content
@@ -44,7 +44,7 @@ Let's mock our favorite search engine::
 
 At anytime you can stop the mocking as follow::
 
-    >>> from responses_helpers import stop_http_mock
+    >>> from mock_services import stop_http_mock
     >>> stop_http_mock()
 
     >>> requests.get('https://duckduckgo.com/?q=responses').content[:15]
@@ -73,8 +73,102 @@ Or start mocking for another function call::
     >>> please_mock_me
 
 
+You can add REST rules with an explicit method. It will add rules as above and
+automatically bind callbacks to fake a REST service. This service mock will
+create, get, update and delete resources for you::
+
+*Note:* *resource* and *id* regex options are mandatory for the tool.
+
+    >>> rest_rules = [
+    ...     {
+    ...         'method': 'LIST',
+    ...         'url': r'^http://my_fake_service/(?P<resource>api)$'
+    ...     },
+    ...     {
+    ...         'method': 'GET',
+    ...         'url': r'^http://my_fake_service/(?P<resource>api)/(?P<id>\d+)$',
+    ...     },
+    ...     {
+    ...         'method': 'GET',
+    ...         'url': r'^http://my_fake_service/(?P<resource>api)/(?P<id>\d+)/(?P<action>download)$',
+    ...     },
+    ...     {
+    ...         'method': 'POST',
+    ...         'url': r'^http://my_fake_service/(?P<resource>api)$',
+    ...         'id_name': 'id',
+    ...         'id_factory': int,
+    ...         'attrs': {
+    ...             'bar': attr.ib(),
+    ...             'foo':attr.ib(default=True)
+    ...         }
+    ...     },
+    ...     {
+    ...         'method': 'PATCH',
+    ...         'url': r'^http://my_fake_service/(?P<resource>api)/(?P<id>\d+)$',
+    ...     },
+    ...     {
+    ...         'method': 'DELETE',
+    ...         'url': r'^http://my_fake_service/(?P<resource>api)/(?P<id>\d+)$'
+    ...     },
+    ... ]
+
+    >>> from mock_services import update_rest_rules
+    >>> update_rest_rules(rest_rules)
+
+    >>> from mock_services import start_http_mock
+    >>> start_http_mock()
+
+    >>> response = requests.get('http://my_fake_service/api')
+    >>> response.status_code
+    200
+    >>> response.json()
+    []
+
+    >>> response = requests.get('http://my_fake_service/api/1')
+    >>> response.status_code
+    404
+
+    >>> response = requests.post('http://my_fake_service/api',
+    ...                          data=json.dumps({}),
+    ...                          headers={'content-type': 'application/json'})
+    >>> response.status_code
+    400
+
+    >>> response = requests.post('http://my_fake_service/api',
+    ...                          data=json.dumps({'bar': 'Python will save the world'}),
+    ...                          headers={'content-type': 'application/json'})
+    >>> response.status_code
+    201
+    >>> response.json()
+    {
+      'id': 1,
+      'foo'; True,
+      'bar'; 'Python will save the world.'
+    }
+
+    >>> response = requests.patch('http://my_fake_service/api/1',
+    ...                           data=json.dumps({'bar': "Python will save the world. I don't know how. But it will."}),
+    ...                           headers={'content-type': 'application/json'})
+    >>> response.status_code
+    200
+
+    >>> response = requests.get('http://my_fake_service/api/1')
+    >>> response.status_code
+    200
+    >>> response.json()
+    {
+      'id': 1,
+      'foo'; True,
+      'bar'; "Python will save the world. I don't know how. But it will."
+    }
+
+    >>> response = requests.delete('http://my_fake_service/api/1')
+    >>> response.status_code
+    204
+
+
 Have fun in testing external APIs ;)
 
 
 .. _`responses`: https://github.com/getsentry/responses
-.. _`responses-helpers`: https://github.com/novafloss/responses-helpers
+.. _`mock-services`: https://github.com/novafloss/mock-services
