@@ -10,6 +10,7 @@ develop: install
 
 .PHONY: tests
 tests:
+	flake8 .
 	python -m unittest discover tests/
 
 .PHONY: release

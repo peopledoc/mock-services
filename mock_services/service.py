@@ -15,6 +15,7 @@ from .exceptions import Http404
 
 logger = logging.getLogger(__name__)
 
+
 @attr.s
 class ResourceContext(object):
     hostname = attr.ib()
@@ -60,14 +61,22 @@ def parse_url(request, url_pattern, id=None, require_id=False):
 
 def validate_data(request, attrs=None):
 
+    logger.debug('attrs: %s', attrs)
+
     data = json.loads(request.body)
     if not attrs:
         return data
 
+    data_to_validate = {k: v for k, v in data.items() if k in attrs.keys()}
+    logger.debug('data_to_validate: %s', data_to_validate)
+
     try:
-        return attr.asdict(attr.make_class("C", attrs)(**data))
-    except TypeError, ValueError:
+        attr.make_class("C", attrs)(**data_to_validate)
+    except (TypeError, ValueError) as e:
+        logger.debug(e)
         raise Http400
+
+    return data
 
 
 @to_json

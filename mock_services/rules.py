@@ -75,7 +75,7 @@ def update_rest_rules(rules, content_type='application/json'):
             continue
 
         # set callback if does not has one
-        if not 'callback' in kw:
+        if 'callback' not in kw:
             _cb = getattr(service, '{0}_cb'.format(kw['method'].lower()))
             kw['callback'] = partial(_cb, **kw.copy())
 
@@ -84,9 +84,9 @@ def update_rest_rules(rules, content_type='application/json'):
             kw['method'] = 'GET'
 
         # clean extra kwargs
-        _ = kw.pop('attrs', None)
-        _ = kw.pop('id_name', None)
-        _ = kw.pop('id_factory', None)
+        kw.pop('attrs', None)
+        kw.pop('id_name', None)
+        kw.pop('id_factory', None)
 
         # update http_rules
         http_rules.append(kw)
