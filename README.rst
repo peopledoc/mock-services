@@ -11,6 +11,11 @@ and a simple dict definition of a service. The idea is to mock everything at
 start according the definition. Then `mock-services`_ permits to
 *start/stop* mock locally.
 
+
+Mock endpoints explicitly
+=========================
+
+
 *Note:* rules urls must be regex. They always will be compiled before updating
 the main `responses`_ urls registry.
 
@@ -73,11 +78,16 @@ Or start mocking for another function call::
     >>> please_mock_me
 
 
-You can add REST rules with an explicit method. It will add rules as above and
-automatically bind callbacks to fake a REST service. This service mock will
-create, get, update and delete resources for you::
+Mock service easy
+=================
 
-*Note:* *resource* and *id* regex options are mandatory for the tool.
+
+You can add REST rules with an explicit method. It will add rules as above and
+automatically bind callbacks to fake a REST service.
+
+*Note:* *resource* and *id* regex options are mandatory in the rules urls.
+
+This service mock will create, get, update and delete resources for you::
 
     >>> rest_rules = [
     ...     {
