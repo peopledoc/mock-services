@@ -5,13 +5,13 @@ import requests
 
 import responses
 
-from responses_helpers import is_http_mock_started
-from responses_helpers import no_http_mock
-from responses_helpers import reset_rules
-from responses_helpers import start_http_mock
-from responses_helpers import stop_http_mock
-from responses_helpers import update_http_rules
-from responses_helpers import with_http_mock
+from mock_services import is_http_mock_started
+from mock_services import no_http_mock
+from mock_services import reset_rules
+from mock_services import start_http_mock
+from mock_services import stop_http_mock
+from mock_services import update_http_rules
+from mock_services import with_http_mock
 
 
 logging.basicConfig(

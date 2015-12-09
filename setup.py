@@ -8,9 +8,9 @@ here = os.path.abspath(os.path.dirname(__file__))
 
 
 setup(
-    name='responses-helpers',
+    name='mock-services',
     version=open(os.path.join(here, 'VERSION')).read().strip(),
-    description='Responses helpers.',
+    description='Mock services.',
     long_description=open(os.path.join(here, 'README.rst')).read(),
     classifiers=[
         'Development Status :: 4 - Beta',
@@ -25,7 +25,7 @@ setup(
     ],
     author='Florent Pigout',
     author_email='florent.pigout@novapost.fr',
-    url='https://github.com/novafloss/responses-helpers',
+    url='https://github.com/novafloss/mock-services',
     license='MIT',
     install_requires=[
         'attrs',
@@ -43,6 +43,6 @@ setup(
         ],
     },
     packages=[
-        'responses_helpers'
+        'mock_services'
     ],
 )

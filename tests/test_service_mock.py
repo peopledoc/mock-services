@@ -10,10 +10,10 @@ import requests
 
 import responses
 
-from responses_helpers import reset_rules
-from responses_helpers import start_http_mock
-from responses_helpers import stop_http_mock
-from responses_helpers import update_rest_rules
+from mock_services import reset_rules
+from mock_services import start_http_mock
+from mock_services import stop_http_mock
+from mock_services import update_rest_rules
 
 
 CONTENTTYPE_JSON = {'content-type': 'application/json'}

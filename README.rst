@@ -1,14 +1,14 @@
-=================
-Responses helpers
-=================
+=============
+Mock services
+=============
 
-.. image:: https://circleci.com/gh/novafloss/responses-helpers.svg?style=shield
-   :target: https://circleci.com/gh/novafloss/responses-helpers
+.. image:: https://circleci.com/gh/novafloss/mock-services.svg?style=shield
+   :target: https://circleci.com/gh/novafloss/mock-services
    :alt: We are under CI!!
 
 Aims to provide an easy way to mock an entire service API based on `responses`_
 and a simple dict definition of a service. The idea is to mock everything at
-start according the definition. Then `responses-helpers`_ permits to
+start according the definition. Then `mock-services`_ permits to
 *start/stop* mock locally.
 
 *Note:* rules urls must be regex. They always will be compiled before updating
@@ -28,14 +28,14 @@ Let's mock our favorite search engine::
     ...     },
     ... ]
 
-    >>> from responses_helpers import update_http_rules
+    >>> from mock_services import update_http_rules
     >>> update_http_rules(rules)
 
     >>> import requests
     >>> requests.get('https://duckduckgo.com/?q=responses').content[:15]
     '<!DOCTYPE html>'
 
-    >>> from responses_helpers import start_http_mock
+    >>> from mock_services import start_http_mock
     >>> start_http_mock()
 
     >>> requests.get('https://duckduckgo.com/?q=responses').content
@@ -44,7 +44,7 @@ Let's mock our favorite search engine::
 
 At anytime you can stop the mocking as follow::
 
-    >>> from responses_helpers import stop_http_mock
+    >>> from mock_services import stop_http_mock
     >>> stop_http_mock()
 
     >>> requests.get('https://duckduckgo.com/?q=responses').content[:15]
@@ -112,10 +112,10 @@ create, get, update and delete resources for you::
     ...     },
     ... ]
 
-    >>> from responses_helpers import update_rest_rules
+    >>> from mock_services import update_rest_rules
     >>> update_rest_rules(rest_rules)
 
-    >>> from responses_helpers import start_http_mock
+    >>> from mock_services import start_http_mock
     >>> start_http_mock()
 
     >>> response = requests.get('http://my_fake_service/api')
@@ -171,4 +171,4 @@ Have fun in testing external APIs ;)
 
 
 .. _`responses`: https://github.com/getsentry/responses
-.. _`responses-helpers`: https://github.com/novafloss/responses-helpers
+.. _`mock-services`: https://github.com/novafloss/mock-services
