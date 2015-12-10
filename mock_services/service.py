@@ -62,6 +62,7 @@ def parse_url(request, url_pattern, id=None, require_id=False):
 def validate_data(request, attrs=None, validators=None):
 
     logger.debug('attrs: %s', attrs)
+    logger.debug('body: %s', request.body)
 
     data = json.loads(request.body)
     data_to_validate = {k: v

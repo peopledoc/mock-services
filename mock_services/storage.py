@@ -52,7 +52,6 @@ class Storage(object):
         return self._registry[ctx.key][ctx.id]
 
     def list(self, ctx):
-        logger.debug('_registry: %s', self._registry)
         return self._registry[ctx.key].values()
 
     def next_id(self, id_factory):

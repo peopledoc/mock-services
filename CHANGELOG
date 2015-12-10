@@ -4,6 +4,7 @@ Changelog
 0.1 (unreleased)
 ----------------
 
+- Add/remove logs
 - Add validators
 - Make optional field validation
 - Fix UUID serialization
