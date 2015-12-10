@@ -87,6 +87,7 @@ def update_rest_rules(rules, content_type='application/json'):
         kw.pop('attrs', None)
         kw.pop('id_name', None)
         kw.pop('id_factory', None)
+        kw.pop('validators', None)
 
         # update http_rules
         http_rules.append(kw)

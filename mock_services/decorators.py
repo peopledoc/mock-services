@@ -4,7 +4,10 @@ import json
 from functools import wraps
 
 from .exceptions import Http400
+from .exceptions import Http401
+from .exceptions import Http403
 from .exceptions import Http404
+from .exceptions import Http405
 from .exceptions import Http409
 from .exceptions import Http500
 from .mock import start_http_mock
@@ -38,13 +41,19 @@ def trap_errors(f):
         try:
             return f(*args, **kwargs)
         except Http400:
-            return 400, {}, {'error': 'validation error'}
+            return 400, {}, {'error': 'Bad Request'}
+        except Http401:
+            return 401, {}, {'error': 'Unauthorized'}
+        except Http403:
+            return 403, {}, {'error': 'Forbidden'}
         except Http404:
-            return 404, {}, {'error': 'not found'}
+            return 404, {}, {'error': 'Not Found'}
+        except Http405:
+            return 405, {}, {'error': 'Method Not Allowed'}
         except Http409:
-            return 409, {}, {'error': 'conflict'}
-        except Http500:
-            return 500, {}, {'error': 'API error'}
+            return 409, {}, {'error': 'Conflict'}
+        except (Exception, Http500):
+            return 500, {}, {'error': 'Internal Server Error'}
     return wrapped
 
 

@@ -87,7 +87,12 @@ automatically bind callbacks to fake a REST service.
 
 *Note:* *resource* and *id* regex options are mandatory in the rules urls.
 
+Additionally, `mock_services`_ include `attrs`_ library. It can be use for
+field validation as follow.
+
 This service mock will create, get, update and delete resources for you::
+
+    >>> import attr
 
     >>> rest_rules = [
     ...     {
@@ -138,6 +143,8 @@ This service mock will create, get, update and delete resources for you::
     >>> response.status_code
     404
 
+    >>> import json
+
     >>> response = requests.post('http://my_fake_service/api',
     ...                          data=json.dumps({}),
     ...                          headers={'content-type': 'application/json'})
@@ -177,8 +184,49 @@ This service mock will create, get, update and delete resources for you::
     204
 
 
+More validation
+===============
+
+
+Is some cases you need to validate a resource against another. Then you can add
+global validators per endpoint as follow::
+
+    >>> from mock_services import storage
+    >>> from mock_services.service import ResourceContext
+    >>> from mock_services.exceptions import Http409
+
+    >>> def duplicate_foo(request):
+    ...     data = json.loads(request.body)
+    ...     ctx = ResourceContext(hostname='my_fake_service', resource='api')
+    ...     if data['foo'] in [o['foo'] for o in storage.list(ctx)]:
+    ...         raise Http409
+
+    >>> rest_rules_with_validators = [
+    ...     {
+    ...         'method': 'POST',
+    ...         'url': r'^http://my_fake_service/(?P<resource>api)$',
+    ...         'validators': [
+    ...             duplicate_foo,
+    ...         ],
+    ...     },
+    ... ]
+
+    >>> response = requests.post('http://my_fake_service/api',
+    ...                          data=json.dumps({'foo': 'bar'}),
+    ...                          headers={'content-type': 'application/json'})
+    >>> response.status_code
+    201
+
+    >>> response = requests.post('http://my_fake_service/api',
+    ...                          data=json.dumps({'foo': 'bar'}),
+    ...                          headers={'content-type': 'application/json'})
+    >>> response.status_code
+    409
+
+
 Have fun in testing external APIs ;)
 
 
+.. _`attrs`: https://github.com/hynek/attrs
 .. _`responses`: https://github.com/getsentry/responses
 .. _`mock-services`: https://github.com/novafloss/mock-services
