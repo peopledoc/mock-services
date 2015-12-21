@@ -3,6 +3,8 @@ import logging
 import unittest
 import uuid
 
+from functools import partial
+
 import attr
 
 import requests
@@ -182,6 +184,18 @@ class ResponsesHelpersServiceTestCase(unittest.TestCase):
         self.assertTrue(hasattr(post_rule['callback'], '__call__'))
         self.assertEqual(post_rule['method'], 'POST')
         self.assertEqual(post_rule['content_type'], 'application/json')
+
+    def test_update_rules_invalid_method(self):
+        update_func = partial(update_rest_rules, [
+            {
+                'body': '',
+                'method': 'INVALID',
+                'status': 200,
+                'url': r'^https://invalid_method.com/'
+            }
+        ])
+        self.assertRaises(NotImplementedError, update_func,
+                          'invalid method "INVALID" for: ^https://invalid_method.com/')  # noqa
 
     def test_rest_mock(self):
 
