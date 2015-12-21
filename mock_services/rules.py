@@ -12,6 +12,16 @@ from . import storage
 
 logger = logging.getLogger(__name__)
 
+METHODS = [
+    'LIST',  # custom
+    'GET',
+    'HEAD',
+    'POST',
+    'PUT',
+    'PATCH',
+    'DELETE',
+]
+
 
 def reset_rules():
     responses.reset()
@@ -64,8 +74,7 @@ def update_rest_rules(rules, content_type='application/json'):
 
     for kw in rules:
 
-        if kw['method'] not in ['LIST', 'GET', 'POST', 'PUT', 'PATCH',
-                                'DELETE']:
+        if kw['method'] not in METHODS:
             raise NotImplementedError('invalid method "{method}" for: {url}'.format(**kw))  # noqa
 
         # set callback if does not has one

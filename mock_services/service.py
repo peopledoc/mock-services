@@ -102,6 +102,12 @@ def get_cb(request, url=None, headers=None, **kwargs):
     return 200, headers or {}, storage.get(ctx)
 
 
+@trap_errors
+def head_cb(request, url=None, headers=None, id_name='id', **kwargs):
+    ctx = parse_url(request, url, require_id=True)
+    return 200, dict(headers or {}, **{id_name: ctx.id}), ''
+
+
 @to_json
 @trap_errors
 def post_cb(request, url=None, headers=None, id_name='id', id_factory=int,
