@@ -136,8 +136,7 @@ def patch_cb(request, url=None, headers=None, attrs=None, validators=None,
 put_cb = patch_cb
 
 
-@to_json
 @trap_errors
 def delete_cb(request, url=None, headers=None, **kwargs):
     ctx = parse_url(request, url, require_id=True)
-    return 204, headers or {}, storage.remove(ctx) or {}
+    return 204, headers or {}, storage.remove(ctx) or ''

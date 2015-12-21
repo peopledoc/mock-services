@@ -78,6 +78,10 @@ def update_rest_rules(rules, content_type='application/json'):
             _cb = getattr(service, '{0}_cb'.format(kw['method'].lower()))
             kw['callback'] = partial(_cb, **kw.copy())
 
+        # no content
+        if kw['method'] in ['DELETE', 'HEAD']:
+            kw['content_type'] = 'text/html'
+
         # restore standard method
         if kw['method'] == 'LIST':
             kw['method'] = 'GET'

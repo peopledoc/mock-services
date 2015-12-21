@@ -183,7 +183,7 @@ class RestTestCase(unittest.TestCase):
         self.assertTrue(delete_rule['url'].match('http://my_fake_service/api/1'))  # noqa
         self.assertTrue(hasattr(delete_rule['callback'], '__call__'))
         self.assertEqual(delete_rule['method'], 'DELETE')
-        self.assertEqual(delete_rule['content_type'], 'application/json')
+        self.assertEqual(delete_rule['content_type'], 'text/html')
 
         get_rule = responses._default_mock._urls[7]
 
@@ -247,8 +247,8 @@ class RestTestCase(unittest.TestCase):
 
         r = requests.delete(url + '/1')
         self.assertEqual(r.status_code, 404)
-        self.assertEqual(r.headers, {'content-type': 'application/json'})
-        self.assertEqual(r.json(), {'error': 'Not Found'})
+        self.assertEqual(r.headers, {'content-type': 'text/html'})
+        self.assertEqual(r.content, 'Not Found')
 
         # add some data
 
@@ -319,8 +319,8 @@ class RestTestCase(unittest.TestCase):
 
         r = requests.delete(url + '/1')
         self.assertEqual(r.status_code, 204)
-        self.assertEqual(r.headers, {'content-type': 'application/json'})
-        self.assertEqual(r.json(), {})
+        self.assertEqual(r.headers, {'content-type': 'text/html'})
+        self.assertEqual(r.content, '')
 
         r = requests.get(url + '/1')
         self.assertEqual(r.status_code, 404)
