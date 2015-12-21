@@ -133,6 +133,9 @@ def patch_cb(request, url=None, headers=None, attrs=None, validators=None,
     return 200, headers or {}, storage.update(ctx, data)
 
 
+put_cb = patch_cb
+
+
 @to_json
 @trap_errors
 def delete_cb(request, url=None, headers=None, **kwargs):
