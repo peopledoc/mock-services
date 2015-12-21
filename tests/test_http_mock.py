@@ -1,8 +1,6 @@
 import logging
 import unittest
 
-from functools import partial
-
 import requests
 
 import responses
@@ -101,18 +99,6 @@ class HttpTestCase(unittest.TestCase):
 
         self.assertTrue(hasattr(responses._default_mock._urls[1]['url'], 'match'))          # noqa
         self.assertTrue(responses._default_mock._urls[1]['url'].match('http://dummy/'))  # noqa
-
-    def test_update_rules_invalid_method(self):
-        update_func = partial(update_http_rules, [
-            {
-                'body': '',
-                'method': 'INVALID',
-                'status': 200,
-                'url': r'^https://invalid_method.com/'
-            }
-        ])
-        self.assertRaises(NotImplementedError, update_func,
-                          'invalid method "INVALID" for: ^https://invalid_method.com/')  # noqa
 
     def test_start_http_mock(self):
 

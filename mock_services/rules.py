@@ -49,11 +49,6 @@ def update_http_rules(rules, content_type='application/json'):
     """
     for i, kw in enumerate(rules):
 
-        if kw['method'] not in ['GET', 'POST', 'PUT', 'PATCH', 'DELETE']:
-            raise NotImplementedError('invalid method "{method}" for: {url}'.format(**kw))  # noqa
-
-        logger.debug('%s %s', kw['method'], kw['url'])
-
         kw['url'] = re.compile(kw['url'])
 
         if 'content_type' not in kw:
