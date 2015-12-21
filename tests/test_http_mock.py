@@ -36,7 +36,7 @@ rules = [
 ]
 
 
-class ResponsesHelpersTestCase(unittest.TestCase):
+class HttpTestCase(unittest.TestCase):
 
     def setUp(self):
         stop_http_mock()

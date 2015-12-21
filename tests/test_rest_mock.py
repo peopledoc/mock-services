@@ -105,7 +105,7 @@ rest_rules_with_validators = [
 ]
 
 
-class ResponsesHelpersServiceTestCase(unittest.TestCase):
+class RestTestCase(unittest.TestCase):
 
     def setUp(self):
         stop_http_mock()
