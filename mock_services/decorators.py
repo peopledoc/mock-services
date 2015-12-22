@@ -45,20 +45,20 @@ def trap_errors(f):
         try:
             return f(*args, **kwargs)
         except Http400:
-            return 400, {}, {'error': 'Bad Request'}
+            return 400, {}, 'Bad Request'
         except Http401:
-            return 401, {}, {'error': 'Unauthorized'}
+            return 401, {}, 'Unauthorized'
         except Http403:
-            return 403, {}, {'error': 'Forbidden'}
+            return 403, {}, 'Forbidden'
         except Http404:
-            return 404, {}, {'error': 'Not Found'}
+            return 404, {}, 'Not Found'
         except Http405:
-            return 405, {}, {'error': 'Method Not Allowed'}
+            return 405, {}, 'Method Not Allowed'
         except Http409:
-            return 409, {}, {'error': 'Conflict'}
+            return 409, {}, 'Conflict'
         except (Exception, Http500) as e:
             logger.exception(e)
-            return 500, {}, {'error': 'Internal Server Error'}
+            return 500, {}, 'Internal Server Error'
     return wrapped
 
 
@@ -66,5 +66,8 @@ def to_json(f):
     @wraps(f)
     def wrapped(*args, **kwargs):
         status_code, headers, data = f(*args, **kwargs)
+        # traped error are not json by default
+        if status_code >= 400:
+            data = {'error': data}
         return status_code, headers, json.dumps(data)
     return wrapped

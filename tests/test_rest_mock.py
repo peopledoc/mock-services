@@ -35,6 +35,10 @@ rest_rules = [
         'url': r'^http://my_fake_service/(?P<resource>api)$'
     },
     {
+        'method': 'HEAD',
+        'url': r'^http://my_fake_service/(?P<resource>api)/(?P<id>\d+)$',
+    },
+    {
         'method': 'GET',
         'url': r'^http://my_fake_service/(?P<resource>api)/(?P<id>\d+)$',
     },
@@ -105,7 +109,7 @@ rest_rules_with_validators = [
 ]
 
 
-class ResponsesHelpersServiceTestCase(unittest.TestCase):
+class RestTestCase(unittest.TestCase):
 
     def setUp(self):
         stop_http_mock()
@@ -119,7 +123,7 @@ class ResponsesHelpersServiceTestCase(unittest.TestCase):
 
         update_rest_rules(rest_rules)
 
-        self.assertEqual(len(responses._default_mock._urls), 9)
+        self.assertEqual(len(responses._default_mock._urls), 10)
         for rule in responses._default_mock._urls:
             self.assertEqual(sorted(rule.keys()), [
                 'callback',
@@ -137,7 +141,15 @@ class ResponsesHelpersServiceTestCase(unittest.TestCase):
         self.assertEqual(list_rule['method'], 'GET')
         self.assertEqual(list_rule['content_type'], 'application/json')
 
-        get_rule = responses._default_mock._urls[1]
+        head_rule = responses._default_mock._urls[1]
+
+        self.assertTrue(hasattr(head_rule['url'], 'match'))
+        self.assertTrue(head_rule['url'].match('http://my_fake_service/api/1'))
+        self.assertTrue(hasattr(head_rule['callback'], '__call__'))
+        self.assertEqual(head_rule['method'], 'HEAD')
+        self.assertEqual(head_rule['content_type'], 'text/html')
+
+        get_rule = responses._default_mock._urls[2]
 
         self.assertTrue(hasattr(get_rule['url'], 'match'))
         self.assertTrue(get_rule['url'].match('http://my_fake_service/api/1'))
@@ -145,7 +157,7 @@ class ResponsesHelpersServiceTestCase(unittest.TestCase):
         self.assertEqual(get_rule['method'], 'GET')
         self.assertEqual(get_rule['content_type'], 'application/json')
 
-        get_rule = responses._default_mock._urls[2]
+        get_rule = responses._default_mock._urls[3]
 
         self.assertTrue(hasattr(get_rule['url'], 'match'))
         self.assertTrue(get_rule['url'].match('http://my_fake_service/api/1/download'))  # noqa
@@ -153,7 +165,7 @@ class ResponsesHelpersServiceTestCase(unittest.TestCase):
         self.assertEqual(get_rule['method'], 'GET')
         self.assertEqual(get_rule['content_type'], 'application/json')
 
-        post_rule = responses._default_mock._urls[3]
+        post_rule = responses._default_mock._urls[4]
 
         self.assertTrue(hasattr(post_rule['url'], 'match'))
         self.assertTrue(post_rule['url'].match('http://my_fake_service/api'))
@@ -161,7 +173,7 @@ class ResponsesHelpersServiceTestCase(unittest.TestCase):
         self.assertEqual(post_rule['method'], 'POST')
         self.assertEqual(post_rule['content_type'], 'application/json')
 
-        patch_rule = responses._default_mock._urls[4]
+        patch_rule = responses._default_mock._urls[5]
 
         self.assertTrue(hasattr(patch_rule['url'], 'match'))
         self.assertTrue(patch_rule['url'].match('http://my_fake_service/api/1'))  # noqa
@@ -169,7 +181,7 @@ class ResponsesHelpersServiceTestCase(unittest.TestCase):
         self.assertEqual(patch_rule['method'], 'PATCH')
         self.assertEqual(patch_rule['content_type'], 'application/json')
 
-        put_rule = responses._default_mock._urls[5]
+        put_rule = responses._default_mock._urls[6]
 
         self.assertTrue(hasattr(put_rule['url'], 'match'))
         self.assertTrue(put_rule['url'].match('http://my_fake_service/api/1'))  # noqa
@@ -177,15 +189,15 @@ class ResponsesHelpersServiceTestCase(unittest.TestCase):
         self.assertEqual(put_rule['method'], 'PUT')
         self.assertEqual(put_rule['content_type'], 'application/json')
 
-        delete_rule = responses._default_mock._urls[6]
+        delete_rule = responses._default_mock._urls[7]
 
         self.assertTrue(hasattr(delete_rule['url'], 'match'))
         self.assertTrue(delete_rule['url'].match('http://my_fake_service/api/1'))  # noqa
         self.assertTrue(hasattr(delete_rule['callback'], '__call__'))
         self.assertEqual(delete_rule['method'], 'DELETE')
-        self.assertEqual(delete_rule['content_type'], 'application/json')
+        self.assertEqual(delete_rule['content_type'], 'text/html')
 
-        get_rule = responses._default_mock._urls[7]
+        get_rule = responses._default_mock._urls[8]
 
         self.assertTrue(hasattr(get_rule['url'], 'match'))
         self.assertTrue(get_rule['url'].match('http://my_fake_service/api/v2/{0}'.format(uuid.uuid4())))  # noqa
@@ -193,7 +205,7 @@ class ResponsesHelpersServiceTestCase(unittest.TestCase):
         self.assertEqual(get_rule['method'], 'GET')
         self.assertEqual(get_rule['content_type'], 'application/json')
 
-        post_rule = responses._default_mock._urls[8]
+        post_rule = responses._default_mock._urls[9]
 
         self.assertTrue(hasattr(post_rule['url'], 'match'))
         self.assertTrue(post_rule['url'].match('http://my_fake_service/api/v2'))  # noqa
@@ -247,8 +259,8 @@ class ResponsesHelpersServiceTestCase(unittest.TestCase):
 
         r = requests.delete(url + '/1')
         self.assertEqual(r.status_code, 404)
-        self.assertEqual(r.headers, {'content-type': 'application/json'})
-        self.assertEqual(r.json(), {'error': 'Not Found'})
+        self.assertEqual(r.headers, {'content-type': 'text/html'})
+        self.assertEqual(r.content, 'Not Found')
 
         # add some data
 
@@ -263,6 +275,14 @@ class ResponsesHelpersServiceTestCase(unittest.TestCase):
             'foo': True,
             'bar': 'Python will save the world.',
         })
+
+        r = requests.head(url + '/1')
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.headers, {
+            'content-type': 'text/html',
+            'id': '1',
+        })
+        self.assertEqual(r.content, '')
 
         # recheck list get ...
 
@@ -319,8 +339,8 @@ class ResponsesHelpersServiceTestCase(unittest.TestCase):
 
         r = requests.delete(url + '/1')
         self.assertEqual(r.status_code, 204)
-        self.assertEqual(r.headers, {'content-type': 'application/json'})
-        self.assertEqual(r.json(), {})
+        self.assertEqual(r.headers, {'content-type': 'text/html'})
+        self.assertEqual(r.content, '')
 
         r = requests.get(url + '/1')
         self.assertEqual(r.status_code, 404)

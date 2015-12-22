@@ -4,6 +4,7 @@ Changelog
 0.2 (unreleased)
 ----------------
 
+- Add HEAD method
 - Add missing PUT method
 
 

@@ -12,6 +12,16 @@ from . import storage
 
 logger = logging.getLogger(__name__)
 
+METHODS = [
+    'LIST',  # custom
+    'GET',
+    'HEAD',
+    'POST',
+    'PUT',
+    'PATCH',
+    'DELETE',
+]
+
 
 def reset_rules():
     responses.reset()
@@ -49,11 +59,6 @@ def update_http_rules(rules, content_type='application/json'):
     """
     for i, kw in enumerate(rules):
 
-        if kw['method'] not in ['GET', 'POST', 'PUT', 'PATCH', 'DELETE']:
-            raise NotImplementedError('invalid method "{method}" for: {url}'.format(**kw))  # noqa
-
-        logger.debug('%s %s', kw['method'], kw['url'])
-
         kw['url'] = re.compile(kw['url'])
 
         if 'content_type' not in kw:
@@ -69,14 +74,17 @@ def update_rest_rules(rules, content_type='application/json'):
 
     for kw in rules:
 
-        if kw['method'] not in ['LIST', 'GET', 'POST', 'PUT', 'PATCH',
-                                'DELETE']:
+        if kw['method'] not in METHODS:
             raise NotImplementedError('invalid method "{method}" for: {url}'.format(**kw))  # noqa
 
         # set callback if does not has one
         if 'callback' not in kw:
             _cb = getattr(service, '{0}_cb'.format(kw['method'].lower()))
             kw['callback'] = partial(_cb, **kw.copy())
+
+        # no content
+        if kw['method'] in ['DELETE', 'HEAD']:
+            kw['content_type'] = 'text/html'
 
         # restore standard method
         if kw['method'] == 'LIST':
