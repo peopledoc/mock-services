@@ -11,8 +11,8 @@ from .exceptions import Http404
 from .exceptions import Http405
 from .exceptions import Http409
 from .exceptions import Http500
-from .mock import start_http_mock
-from .mock import stop_http_mock
+from .helpers import start_http_mock
+from .helpers import stop_http_mock
 
 
 logger = logging.getLogger(__name__)
@@ -41,33 +41,40 @@ def with_http_mock(f):
 
 def trap_errors(f):
     @wraps(f)
-    def wrapped(*args, **kwargs):
+    def wrapped(request, context, *args, **kwargs):
         try:
-            return f(*args, **kwargs)
+            return f(request, context, *args, **kwargs)
         except Http400:
-            return 400, {}, 'Bad Request'
+            context.status_code = 400
+            return 'Bad Request'
         except Http401:
-            return 401, {}, 'Unauthorized'
+            context.status_code = 401
+            return 'Unauthorized'
         except Http403:
-            return 403, {}, 'Forbidden'
+            context.status_code = 403
+            return 'Forbidden'
         except Http404:
-            return 404, {}, 'Not Found'
+            context.status_code = 404
+            return 'Not Found'
         except Http405:
-            return 405, {}, 'Method Not Allowed'
+            context.status_code = 405
+            return 'Method Not Allowed'
         except Http409:
-            return 409, {}, 'Conflict'
+            context.status_code = 409
+            return 'Conflict'
         except (Exception, Http500) as e:
             logger.exception(e)
-            return 500, {}, 'Internal Server Error'
+            context.status_code = 500
+            return 'Internal Server Error'
     return wrapped
 
 
 def to_json(f):
     @wraps(f)
-    def wrapped(*args, **kwargs):
-        status_code, headers, data = f(*args, **kwargs)
+    def wrapped(request, context, *args, **kwargs):
+        data = f(request, context, *args, **kwargs)
         # traped error are not json by default
-        if status_code >= 400:
+        if context.status_code >= 400:
             data = {'error': data}
-        return status_code, headers, json.dumps(data)
+        return json.dumps(data)
     return wrapped

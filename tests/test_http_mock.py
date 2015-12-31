@@ -3,8 +3,9 @@ import unittest
 
 import requests
 
-import responses
+from requests_mock import exceptions
 
+from mock_services import http_mock
 from mock_services import is_http_mock_started
 from mock_services import no_http_mock
 from mock_services import reset_rules
@@ -20,14 +21,14 @@ logging.basicConfig(
 )
 
 
-def fake_duckduckgo_cb(request):
-    return 200, {}, 'Coincoin!'
+def fake_duckduckgo_cb(request, context):
+    return 'Coincoin!'
 
 
 rules = [
     {
-        'callback': fake_duckduckgo_cb,
-        'content_type': 'text/html',
+        'text': fake_duckduckgo_cb,
+        'headers': {'Content-Type': 'text/html'},
         'method': 'GET',
         'url': r'^https://duckduckgo.com/\?q='
     },
@@ -39,78 +40,72 @@ class HttpTestCase(unittest.TestCase):
     def setUp(self):
         stop_http_mock()
         reset_rules()
+        http_mock.set_allow_external(False)
 
     tearDown = setUp
 
+    def test_reset_rules(self):
+
+        self.assertFalse(http_mock.get_rules())
+
+        update_http_rules(rules)
+        self.assertEqual(len(http_mock.get_rules()), 1)
+
+        # reset
+        reset_rules()
+        self.assertFalse(http_mock.get_rules())
+
     def test_update_rules(self):
 
-        self.assertFalse(responses._default_mock._urls)
+        self.assertFalse(http_mock.get_rules())
 
         # add first rule
         update_http_rules(rules)
 
-        self.assertEqual(len(responses._default_mock._urls), 1)
-        self.assertEqual(sorted(responses._default_mock._urls[0].keys()), [
-            'callback',
-            'content_type',
-            'match_querystring',
-            'method',
-            'url',
-        ])
+        self.assertEqual(len(http_mock.get_rules()), 1)
 
-        self.assertTrue(hasattr(responses._default_mock._urls[0]['url'], 'match'))                             # noqa
-        self.assertTrue(responses._default_mock._urls[0]['url'].match('https://duckduckgo.com/?q=responses'))  # noqa
+        matcher = http_mock.get_rules()[0]
+        self.assertEqual(matcher._method, 'GET')
+        self.assertTrue(hasattr(matcher._url, 'match'))
+        self.assertTrue(matcher._url.match('https://duckduckgo.com/?q=mock-services'))  # noqa
 
-        self.assertTrue(hasattr(responses._default_mock._urls[0]['callback'], '__call__'))                     # noqa
-
-        self.assertEqual(responses._default_mock._urls[0]['match_querystring'], True)                          # noqa
-        self.assertEqual(responses._default_mock._urls[0]['method'], 'GET')
-        self.assertEqual(responses._default_mock._urls[0]['content_type'], 'text/html')                        # noqa
+        response = matcher._responses[0]
+        self.assertTrue(hasattr(response._params['text'], '__call__'))
+        self.assertEqual(response._params['headers']['Content-Type'], 'text/html')  # noqa
 
         # add second rule
         update_http_rules([
             {
-                'body': '{"coin": 1}',
                 'method': 'POST',
-                'status': 201,
+                'status_code': 201,
+                'text': '{"coin": 1}',
                 'url': r'http://dummy/',
             },
         ])
 
-        self.assertEqual(len(responses._default_mock._urls), 2)
-        self.assertEqual(sorted(responses._default_mock._urls[1].keys()), [
-            'adding_headers',
-            'body',
-            'content_type',
-            'match_querystring',
-            'method',
-            'status',
-            'stream',
-            'url',
-        ])
+        self.assertEqual(len(http_mock.get_rules()), 2)
 
-        self.assertEqual(responses._default_mock._urls[1]['adding_headers'], None)       # noqa
-        self.assertEqual(responses._default_mock._urls[1]['body'], '{"coin": 1}')       # noqa
-        self.assertEqual(responses._default_mock._urls[1]['content_type'], 'application/json')       # noqa
-        self.assertEqual(responses._default_mock._urls[1]['match_querystring'], True)       # noqa
-        self.assertEqual(responses._default_mock._urls[1]['method'], 'POST')       # noqa
-        self.assertEqual(responses._default_mock._urls[1]['status'], 201)       # noqa
-        self.assertEqual(responses._default_mock._urls[1]['stream'], False)       # noqa
+        matcher = http_mock.get_rules()[1]
+        self.assertTrue(hasattr(matcher._url, 'match'))
+        self.assertTrue(matcher._url.match('http://dummy/'))
+        self.assertEqual(matcher._method, 'POST')
 
-        self.assertTrue(hasattr(responses._default_mock._urls[1]['url'], 'match'))          # noqa
-        self.assertTrue(responses._default_mock._urls[1]['url'].match('http://dummy/'))  # noqa
+        response = matcher._responses[0]
+        self.assertEqual(response._params['status_code'], 201)
+        self.assertEqual(response._params['text'], '{"coin": 1}')
+        self.assertEqual(response._params['headers']['Content-Type'], 'text/plain')  # noqa
 
     def test_start_http_mock(self):
 
         update_http_rules(rules)
 
-        response = requests.get('https://duckduckgo.com/?q=responses')
+        response = requests.get('https://duckduckgo.com/?q=mock-services')
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.content[:15], '<!DOCTYPE html>')
 
         self.assertTrue(start_http_mock())
 
-        response = requests.get('https://duckduckgo.com/?q=responses')
+        response = requests.get('https://duckduckgo.com/?q=mock-services')
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.content, 'Coincoin!')
 
@@ -120,13 +115,13 @@ class HttpTestCase(unittest.TestCase):
 
         self.assertTrue(start_http_mock())
 
-        response = requests.get('https://duckduckgo.com/?q=responses')
+        response = requests.get('https://duckduckgo.com/?q=mock-services')
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.content, 'Coincoin!')
 
         self.assertTrue(stop_http_mock())
 
-        response = requests.get('https://duckduckgo.com/?q=responses')
+        response = requests.get('https://duckduckgo.com/?q=mock-services')
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.content[:15], '<!DOCTYPE html>')
 
@@ -136,7 +131,7 @@ class HttpTestCase(unittest.TestCase):
 
         start_http_mock()
 
-        response = requests.get('https://duckduckgo.com/?q=responses')
+        response = requests.get('https://duckduckgo.com/?q=mock-services')
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.content, 'Coincoin!')
 
@@ -145,13 +140,13 @@ class HttpTestCase(unittest.TestCase):
         # already stopped
         self.assertFalse(stop_http_mock())
 
-        response = requests.get('https://duckduckgo.com/?q=responses')
+        response = requests.get('https://duckduckgo.com/?q=mock-services')
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.content[:15], '<!DOCTYPE html>')
 
         self.assertTrue(start_http_mock())
 
-        response = requests.get('https://duckduckgo.com/?q=responses')
+        response = requests.get('https://duckduckgo.com/?q=mock-services')
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.content, 'Coincoin!')
 
@@ -177,7 +172,7 @@ class HttpTestCase(unittest.TestCase):
 
             self.assertFalse(is_http_mock_started())
 
-            response = requests.get('https://duckduckgo.com/?q=responses')
+            response = requests.get('https://duckduckgo.com/?q=mock-services')
             self.assertEqual(response.status_code, 200)
             self.assertEqual(response.content[:15], '<!DOCTYPE html>')
 
@@ -194,8 +189,41 @@ class HttpTestCase(unittest.TestCase):
 
             self.assertTrue(is_http_mock_started())
 
-            response = requests.get('https://duckduckgo.com/?q=responses')
+            response = requests.get('https://duckduckgo.com/?q=mock-services')
             self.assertEqual(response.status_code, 200)
             self.assertEqual(response.content, 'Coincoin!')
 
         self.assertFalse(is_http_mock_started())
+
+    def test_real_http_0(self):
+
+        update_http_rules(rules)
+
+        self.assertTrue(start_http_mock())
+
+        # mocked
+        response = requests.get('https://duckduckgo.com/?q=mock-services')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.content, 'Coincoin!')
+
+        # not mocked but fail
+        self.assertRaises(exceptions.NoMockAddress, requests.get,
+                          'https://www.google.com/#q=mock-services')
+
+    def test_real_http_1(self):
+
+        update_http_rules(rules)
+        self.assertTrue(start_http_mock())
+
+        # allow external call
+        http_mock.set_allow_external(True)
+
+        # mocked
+        response = requests.get('https://duckduckgo.com/?q=mock-services')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.content, 'Coincoin!')
+
+        # not mocked but do an external call
+        response = requests.get('https://www.google.com/#q=mock-services')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.content[:15], '<!doctype html>')

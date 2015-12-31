@@ -9,20 +9,18 @@ import attr
 
 import requests
 
-import responses
-
 from mock_services import reset_rules
 from mock_services import start_http_mock
 from mock_services import stop_http_mock
 from mock_services import update_rest_rules
-
+from mock_services import http_mock
 from mock_services import storage
 from mock_services.exceptions import Http400
 from mock_services.exceptions import Http409
 from mock_services.service import ResourceContext
 
 
-CONTENTTYPE_JSON = {'content-type': 'application/json'}
+CONTENTTYPE_JSON = {'Content-Type': 'application/json'}
 
 logging.basicConfig(
     level=logging.INFO,
@@ -117,108 +115,47 @@ class RestTestCase(unittest.TestCase):
 
     tearDown = setUp
 
+    def _test_rule(self, index, method, url_to_match,
+                   content_type='application/json'):
+
+        matcher = http_mock.get_rules()[index]
+
+        self.assertEqual(matcher._method, method)
+
+        self.assertTrue(hasattr(matcher._url, 'match'))
+        self.assertTrue(matcher._url.match(url_to_match))
+
+        response = matcher._responses[0]
+        self.assertTrue(hasattr(response._params['text'], '__call__'))
+        self.assertEqual(response._params['headers']['Content-Type'], content_type)  # noqa
+
     def test_update_rules(self):
 
-        self.assertFalse(responses._default_mock._urls)
+        self.assertFalse(http_mock.get_rules())
 
         update_rest_rules(rest_rules)
 
-        self.assertEqual(len(responses._default_mock._urls), 10)
-        for rule in responses._default_mock._urls:
-            self.assertEqual(sorted(rule.keys()), [
-                'callback',
-                'content_type',
-                'match_querystring',
-                'method',
-                'url',
-            ])
+        self.assertEqual(len(http_mock.get_rules()), 10)
 
-        list_rule = responses._default_mock._urls[0]
-
-        self.assertTrue(hasattr(list_rule['url'], 'match'))
-        self.assertTrue(list_rule['url'].match('http://my_fake_service/api'))
-        self.assertTrue(hasattr(list_rule['callback'], '__call__'))
-        self.assertEqual(list_rule['method'], 'GET')
-        self.assertEqual(list_rule['content_type'], 'application/json')
-
-        head_rule = responses._default_mock._urls[1]
-
-        self.assertTrue(hasattr(head_rule['url'], 'match'))
-        self.assertTrue(head_rule['url'].match('http://my_fake_service/api/1'))
-        self.assertTrue(hasattr(head_rule['callback'], '__call__'))
-        self.assertEqual(head_rule['method'], 'HEAD')
-        self.assertEqual(head_rule['content_type'], 'text/html')
-
-        get_rule = responses._default_mock._urls[2]
-
-        self.assertTrue(hasattr(get_rule['url'], 'match'))
-        self.assertTrue(get_rule['url'].match('http://my_fake_service/api/1'))
-        self.assertTrue(hasattr(get_rule['callback'], '__call__'))
-        self.assertEqual(get_rule['method'], 'GET')
-        self.assertEqual(get_rule['content_type'], 'application/json')
-
-        get_rule = responses._default_mock._urls[3]
-
-        self.assertTrue(hasattr(get_rule['url'], 'match'))
-        self.assertTrue(get_rule['url'].match('http://my_fake_service/api/1/download'))  # noqa
-        self.assertTrue(hasattr(get_rule['callback'], '__call__'))
-        self.assertEqual(get_rule['method'], 'GET')
-        self.assertEqual(get_rule['content_type'], 'application/json')
-
-        post_rule = responses._default_mock._urls[4]
-
-        self.assertTrue(hasattr(post_rule['url'], 'match'))
-        self.assertTrue(post_rule['url'].match('http://my_fake_service/api'))
-        self.assertTrue(hasattr(post_rule['callback'], '__call__'))
-        self.assertEqual(post_rule['method'], 'POST')
-        self.assertEqual(post_rule['content_type'], 'application/json')
-
-        patch_rule = responses._default_mock._urls[5]
-
-        self.assertTrue(hasattr(patch_rule['url'], 'match'))
-        self.assertTrue(patch_rule['url'].match('http://my_fake_service/api/1'))  # noqa
-        self.assertTrue(hasattr(patch_rule['callback'], '__call__'))
-        self.assertEqual(patch_rule['method'], 'PATCH')
-        self.assertEqual(patch_rule['content_type'], 'application/json')
-
-        put_rule = responses._default_mock._urls[6]
-
-        self.assertTrue(hasattr(put_rule['url'], 'match'))
-        self.assertTrue(put_rule['url'].match('http://my_fake_service/api/1'))  # noqa
-        self.assertTrue(hasattr(put_rule['callback'], '__call__'))
-        self.assertEqual(put_rule['method'], 'PUT')
-        self.assertEqual(put_rule['content_type'], 'application/json')
-
-        delete_rule = responses._default_mock._urls[7]
-
-        self.assertTrue(hasattr(delete_rule['url'], 'match'))
-        self.assertTrue(delete_rule['url'].match('http://my_fake_service/api/1'))  # noqa
-        self.assertTrue(hasattr(delete_rule['callback'], '__call__'))
-        self.assertEqual(delete_rule['method'], 'DELETE')
-        self.assertEqual(delete_rule['content_type'], 'text/html')
-
-        get_rule = responses._default_mock._urls[8]
-
-        self.assertTrue(hasattr(get_rule['url'], 'match'))
-        self.assertTrue(get_rule['url'].match('http://my_fake_service/api/v2/{0}'.format(uuid.uuid4())))  # noqa
-        self.assertTrue(hasattr(get_rule['callback'], '__call__'))
-        self.assertEqual(get_rule['method'], 'GET')
-        self.assertEqual(get_rule['content_type'], 'application/json')
-
-        post_rule = responses._default_mock._urls[9]
-
-        self.assertTrue(hasattr(post_rule['url'], 'match'))
-        self.assertTrue(post_rule['url'].match('http://my_fake_service/api/v2'))  # noqa
-        self.assertTrue(hasattr(post_rule['callback'], '__call__'))
-        self.assertEqual(post_rule['method'], 'POST')
-        self.assertEqual(post_rule['content_type'], 'application/json')
+        self._test_rule(0, 'GET', 'http://my_fake_service/api')
+        self._test_rule(1, 'HEAD', 'http://my_fake_service/api/1',
+                        content_type='text/plain')
+        self._test_rule(2, 'GET', 'http://my_fake_service/api/1')
+        self._test_rule(3, 'GET', 'http://my_fake_service/api/1/download')
+        self._test_rule(4, 'POST', 'http://my_fake_service/api')
+        self._test_rule(5, 'PATCH', 'http://my_fake_service/api/1')
+        self._test_rule(6, 'PUT', 'http://my_fake_service/api/1')
+        self._test_rule(7, 'DELETE', 'http://my_fake_service/api/1',
+                        content_type='text/plain')
+        self._test_rule(8, 'GET', 'http://my_fake_service/api/v2/{0}'.format(uuid.uuid4()))  # noqa
+        self._test_rule(9, 'POST', 'http://my_fake_service/api/v2')
 
     def test_update_rules_invalid_method(self):
         update_func = partial(update_rest_rules, [
             {
-                'body': '',
+                'text': '',
                 'method': 'INVALID',
-                'status': 200,
+                'status_code': 200,
                 'url': r'^https://invalid_method.com/'
             }
         ])
@@ -259,7 +196,7 @@ class RestTestCase(unittest.TestCase):
 
         r = requests.delete(url + '/1')
         self.assertEqual(r.status_code, 404)
-        self.assertEqual(r.headers, {'content-type': 'text/html'})
+        self.assertEqual(r.headers, {'content-type': 'text/plain'})
         self.assertEqual(r.content, 'Not Found')
 
         # add some data
@@ -279,7 +216,7 @@ class RestTestCase(unittest.TestCase):
         r = requests.head(url + '/1')
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.headers, {
-            'content-type': 'text/html',
+            'content-type': 'text/plain',
             'id': '1',
         })
         self.assertEqual(r.content, '')
@@ -339,7 +276,7 @@ class RestTestCase(unittest.TestCase):
 
         r = requests.delete(url + '/1')
         self.assertEqual(r.status_code, 204)
-        self.assertEqual(r.headers, {'content-type': 'text/html'})
+        self.assertEqual(r.headers, {'content-type': 'text/plain'})
         self.assertEqual(r.content, '')
 
         r = requests.get(url + '/1')

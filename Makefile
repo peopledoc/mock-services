@@ -8,8 +8,8 @@ install:
 develop: install
 	pip install -e ".[test]"
 
-.PHONY: tests
-tests:
+.PHONY: test
+test:
 	flake8 .
 	python -m unittest discover tests/
 

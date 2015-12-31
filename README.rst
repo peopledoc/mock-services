@@ -6,10 +6,19 @@ Mock services
    :target: https://circleci.com/gh/novafloss/mock-services
    :alt: We are under CI!!
 
-Aims to provide an easy way to mock an entire service API based on `responses`_
-and a simple dict definition of a service. The idea is to mock everything at
-start according the definition. Then `mock-services`_ permits to
-*start/stop* mock locally.
+Aims to provide an easy way to mock an entire service API based on
+`requests-mock`_ and a simple dict definition of a service. The idea is to mock
+everything at start according given rules. Then `mock-services`_ allows to
+*start/stop* http mock locally.
+
+During our session we can:
+
+- add rules
+- permit external calls
+- stop mocking
+- reset rules
+- restart mocking
+- etc.
 
 
 Mock endpoints explicitly
@@ -17,7 +26,7 @@ Mock endpoints explicitly
 
 
 *Note:* rules urls must be regex. They always will be compiled before updating
-the main `responses`_ urls registry.
+the main `requests-mock`_ urls registry.
 
 Let's mock our favorite search engine::
 
@@ -26,8 +35,8 @@ Let's mock our favorite search engine::
 
     >>> rules = [
     ...     {
-    ...         'callback': fake_duckduckgo_cb,
-    ...         'content_type': 'text/html',
+    ...         'text': fake_duckduckgo_cb,
+    ...         'headers': {'Content-Type': 'text/html'},
     ...         'method': 'GET',
     ...         'url': r'^https://duckduckgo.com/\?q='
     ...     },
@@ -37,14 +46,31 @@ Let's mock our favorite search engine::
     >>> update_http_rules(rules)
 
     >>> import requests
-    >>> requests.get('https://duckduckgo.com/?q=responses').content[:15]
+    >>> requests.get('https://duckduckgo.com/?q=mock-services').content[:15]
     '<!DOCTYPE html>'
 
     >>> from mock_services import start_http_mock
     >>> start_http_mock()
 
-    >>> requests.get('https://duckduckgo.com/?q=responses').content
+    >>> requests.get('https://duckduckgo.com/?q=mock-services').content
     'Coincoin!'
+
+
+When the http_mock is started if you try to call an external url, it should
+fail::
+
+    >>> requests.get('https://www.google.com/#q=mock-services')
+    ...
+    NoMockAddress: No mock address: GET https://www.google.com/#q=mock-services
+
+
+Then you can allow external calls if needed::
+
+    >>> from mock_services import http_mock
+    >>> http_mock.set_allow_external(True)
+
+    >>> requests.get('https://www.google.com/#q=mock-services').content[:15]
+    '<!doctype html>'
 
 
 At anytime you can stop the mocking as follow::
@@ -52,7 +78,7 @@ At anytime you can stop the mocking as follow::
     >>> from mock_services import stop_http_mock
     >>> stop_http_mock()
 
-    >>> requests.get('https://duckduckgo.com/?q=responses').content[:15]
+    >>> requests.get('https://duckduckgo.com/?q=mock-services').content[:15]
     '<!DOCTYPE html>'
 
 
@@ -62,7 +88,7 @@ Or stop mocking during a function call::
 
     >>> @no_http_mock
     ... def please_do_not_mock_me():
-    ...     return requests.get('https://duckduckgo.com/?q=responses').content[:15] == '<!DOCTYPE html>', 'mocked!'
+    ...     return requests.get('https://duckduckgo.com/?q=mock-services').content[:15] == '<!DOCTYPE html>', 'mocked!'
 
     >>> please_do_not_mock_me
 
@@ -73,7 +99,7 @@ Or start mocking for another function call::
 
     >>> @with_http_mock
     ... def please_mock_me():
-    ...     assert requests.get('https://duckduckgo.com/?q=responses').content == 'Coincoin', 'no mock!'
+    ...     assert requests.get('https://duckduckgo.com/?q=mock-services').content == 'Coincoin', 'no mock!'
 
     >>> please_mock_me
 
@@ -228,5 +254,5 @@ Have fun in testing external APIs ;)
 
 
 .. _`attrs`: https://github.com/hynek/attrs
-.. _`responses`: https://github.com/getsentry/responses
+.. _`requests-mock`: https://github.com/openstack/requests-mock
 .. _`mock-services`: https://github.com/novafloss/mock-services
