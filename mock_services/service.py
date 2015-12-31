@@ -48,15 +48,15 @@ def parse_url(request, url_pattern, id=None, require_id=False):
     action = url_kw.pop('action', 'default')
     logger.debug('action: %s', action)
 
-    ctx = ResourceContext(
+    resource_context = ResourceContext(
         hostname=hostname,
         resource=url_kw.pop('resource'),
         action=action,
         id=url_kw.pop('id', id),
     )
-    logger.debug('ctx: %s', attr.asdict(ctx))
+    logger.debug('resource_context: %s', attr.asdict(resource_context))
 
-    return ctx
+    return resource_context
 
 
 def validate_data(request, attrs=None, validators=None):
@@ -90,27 +90,32 @@ def validate_data(request, attrs=None, validators=None):
 
 @to_json
 @trap_errors
-def list_cb(request, url=None, headers=None, **kwargs):
-    ctx = parse_url(request, url)
-    return 200, headers or {}, storage.list(ctx)
+def list_cb(request, context, url=None, **kwargs):
+    resource_context = parse_url(request, url)
+    context.status_code = 200
+    return storage.list(resource_context)
 
 
 @to_json
 @trap_errors
-def get_cb(request, url=None, headers=None, **kwargs):
-    ctx = parse_url(request, url, require_id=True)
-    return 200, headers or {}, storage.get(ctx)
+def get_cb(request, context, url=None, **kwargs):
+    resource_context = parse_url(request, url, require_id=True)
+    context.status_code = 200
+    return storage.get(resource_context)
 
 
 @trap_errors
-def head_cb(request, url=None, headers=None, id_name='id', **kwargs):
-    ctx = parse_url(request, url, require_id=True)
-    return 200, dict(headers or {}, **{id_name: ctx.id}), ''
+def head_cb(request, context, url=None, id_name='id', **kwargs):
+    resource_context = parse_url(request, url, require_id=True)
+    context.headers = dict(context.headers or {},
+                           **{id_name: resource_context.id})
+    context.status_code = 200
+    return ''
 
 
 @to_json
 @trap_errors
-def post_cb(request, url=None, headers=None, id_name='id', id_factory=int,
+def post_cb(request, context, url=None, id_name='id', id_factory=int,
             attrs=None, validators=None, **kwargs):
 
     data = validate_data(request, attrs=attrs, validators=validators)
@@ -123,26 +128,31 @@ def post_cb(request, url=None, headers=None, id_name='id', id_factory=int,
     })
     logger.debug('data: %s', data)
 
-    ctx = parse_url(request, url, id=id)
-    return 201, headers or {}, storage.add(ctx, data)
+    resource_context = parse_url(request, url, id=id)
+    context.status_code = 201
+
+    return storage.add(resource_context, data)
 
 
 @to_json
 @trap_errors
-def patch_cb(request, url=None, headers=None, attrs=None, validators=None,
+def patch_cb(request, context, url=None, attrs=None, validators=None,
              **kwargs):
 
     data = validate_data(request, attrs=attrs, validators=validators)
     logger.debug('data: %s', data)
 
-    ctx = parse_url(request, url, require_id=True)
-    return 200, headers or {}, storage.update(ctx, data)
+    resource_context = parse_url(request, url, require_id=True)
+    context.status_code = 200
+
+    return storage.update(resource_context, data)
 
 
 put_cb = patch_cb
 
 
 @trap_errors
-def delete_cb(request, url=None, headers=None, **kwargs):
-    ctx = parse_url(request, url, require_id=True)
-    return 204, headers or {}, storage.remove(ctx) or ''
+def delete_cb(request, context, url=None, **kwargs):
+    resource_context = parse_url(request, url, require_id=True)
+    context.status_code = 204
+    return storage.remove(resource_context) or ''

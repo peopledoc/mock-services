@@ -2,10 +2,10 @@
 import logging
 import re
 
+from copy import deepcopy
 from functools import partial
 
-import responses
-
+from . import http_mock
 from . import service
 from . import storage
 
@@ -24,15 +24,15 @@ METHODS = [
 
 
 def reset_rules():
-    responses.reset()
     storage.reset()
+    http_mock.reset()
 
 
-def update_http_rules(rules, content_type='application/json'):
-    """Adds rules to global responses mock.
+def update_http_rules(rules, content_type='text/plain'):
+    """Adds rules to global http mock.
 
     It permits to set mock in a more global way than decorators, cf.:
-    https://github.com/getsentry/responses
+    https://github.com/openstack/requests-mock
 
     Here we assume urls in the passed dict are regex we recompile before adding
     a rule.
@@ -44,47 +44,55 @@ def update_http_rules(rules, content_type='application/json'):
 
     >>> rules = [
         {
-            'body': 'I am watching you',
             'method': 'GET',
-            'status': 200,
+            'status_code': 200,
+            'text': 'I am watching you',
             'url': r'^https://www.google.com/#q='
         },
         {
-            'callback': fake_duckduckgo_cb,
             'method': 'GET',
+            'text': fake_duckduckgo_cb,
             'url': r'^https://duckduckgo.com/?q='
         },
     ]
 
     """
-    for i, kw in enumerate(rules):
+    for kw in deepcopy(rules):
 
         kw['url'] = re.compile(kw['url'])
 
-        if 'content_type' not in kw:
-            kw['content_type'] = content_type
+        # ensure headers dict for at least have a default content type
+        if 'Content-Type' not in kw.get('headers', {}):
+            kw['headers'] = dict(kw.get('headers', {}), **{
+                'Content-Type': content_type,
+            })
 
-        add_func = 'add_callback' if 'callback' in kw else 'add'
-        getattr(responses, add_func)(match_querystring=True, **kw)
+        method = kw.pop('method')
+        url = kw.pop('url')
+
+        http_mock.register_uri(method, url, **kw)
 
 
 def update_rest_rules(rules, content_type='application/json'):
 
     http_rules = []
 
-    for kw in rules:
+    for kw in deepcopy(rules):
 
         if kw['method'] not in METHODS:
             raise NotImplementedError('invalid method "{method}" for: {url}'.format(**kw))  # noqa
 
         # set callback if does not has one
-        if 'callback' not in kw:
+        if 'text' not in kw:
             _cb = getattr(service, '{0}_cb'.format(kw['method'].lower()))
-            kw['callback'] = partial(_cb, **kw.copy())
+            kw['text'] = partial(_cb, **kw.copy())
 
         # no content
-        if kw['method'] in ['DELETE', 'HEAD']:
-            kw['content_type'] = 'text/html'
+        if kw['method'] in ['DELETE', 'HEAD'] \
+                and'Content-Type' not in kw.get('headers', {}):
+            kw['headers'] = dict(kw.get('headers', {}), **{
+                'Content-Type': 'text/plain',
+            })
 
         # restore standard method
         if kw['method'] == 'LIST':
@@ -99,4 +107,4 @@ def update_rest_rules(rules, content_type='application/json'):
         # update http_rules
         http_rules.append(kw)
 
-    update_http_rules(rules, content_type=content_type)
+    update_http_rules(http_rules, content_type=content_type)

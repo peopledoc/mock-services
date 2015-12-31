@@ -20,8 +20,10 @@ setup(
         'Programming Language :: Python',
     ],
     keywords=[
+        'http',
         'mock',
-        'responses',
+        'requests',
+        'rest',
     ],
     author='Florent Pigout',
     author_email='florent.pigout@novapost.fr',
@@ -30,7 +32,7 @@ setup(
     install_requires=[
         'attrs',
         'funcsigs',
-        'responses',
+        'requests-mock',
         'setuptools>=17.1',
     ],
     extras_require={
