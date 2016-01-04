@@ -7,6 +7,7 @@ Changelog
 - Add HEAD method
 - Add missing PUT method
 - Move to requests-mock
+- Raise ConnectionError on unmatched request
 
 
 0.1 (2015-12-10)

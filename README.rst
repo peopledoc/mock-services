@@ -61,7 +61,7 @@ fail::
 
     >>> requests.get('https://www.google.com/#q=mock-services')
     ...
-    NoMockAddress: No mock address: GET https://www.google.com/#q=mock-services
+    ConnectionError: Connection refused: GET https://www.google.com/#q=mock-services
 
 
 Then you can allow external calls if needed::

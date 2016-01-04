@@ -3,7 +3,7 @@ import unittest
 
 import requests
 
-from requests_mock import exceptions
+from requests.exceptions import ConnectionError
 
 from mock_services import http_mock
 from mock_services import is_http_mock_started
@@ -207,8 +207,14 @@ class HttpTestCase(unittest.TestCase):
         self.assertEqual(response.content, 'Coincoin!')
 
         # not mocked but fail
-        self.assertRaises(exceptions.NoMockAddress, requests.get,
+        self.assertRaises(ConnectionError, requests.get,
                           'https://www.google.com/#q=mock-services')
+        # test we keep the request
+        try:
+            url = 'https://www.google.com/#q=mock-services'
+            requests.get(url)
+        except ConnectionError as e:
+            self.assertEqual(e.request.url, url)
 
     def test_real_http_1(self):
 
