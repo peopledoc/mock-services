@@ -338,3 +338,17 @@ class RestTestCase(unittest.TestCase):
             'foo': 'bar',
         }), headers=CONTENTTYPE_JSON)
         self.assertEqual(r.status_code, 409)
+
+    def test_update_rules_with_another_body_arg(self):
+
+        update_rest_rules([
+            {
+                'content': 'Coincoin Content!',
+                'method': 'GET',
+                'url': r'^http://my_fake_service',
+            }
+        ])
+        self.assertTrue(start_http_mock())
+
+        r = requests.get('http://my_fake_service')
+        self.assertEqual(r.content, 'Coincoin Content!')
