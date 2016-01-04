@@ -5,6 +5,8 @@ import re
 from copy import deepcopy
 from functools import partial
 
+from requests_mock.response import _BODY_ARGS
+
 from . import http_mock
 from . import service
 from . import storage
@@ -83,7 +85,7 @@ def update_rest_rules(rules, content_type='application/json'):
             raise NotImplementedError('invalid method "{method}" for: {url}'.format(**kw))  # noqa
 
         # set callback if does not has one
-        if 'text' not in kw:
+        if not any(x for x in _BODY_ARGS if x in kw):
             _cb = getattr(service, '{0}_cb'.format(kw['method'].lower()))
             kw['text'] = partial(_cb, **kw.copy())
 
