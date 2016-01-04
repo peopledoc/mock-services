@@ -1,5 +1,9 @@
+import requests
+from requests.exceptions import ConnectionError
+
 from requests_mock import Adapter
 from requests_mock import MockerCore
+from requests_mock.exceptions import NoMockAddress
 
 
 class HttpAdapter(Adapter):
@@ -26,9 +30,35 @@ class HttpMock(MockerCore):
     def set_allow_external(self, allow):
         """Set flag to authorize external calls when no matching mock.
 
-        Will raise an requests_mock.exceptions.NoMockAddress error otherwhise.
+        Will raise a ConnectionError otherwhise.
         """
         self._real_http = allow
+
+    def _patch_real_send(self):
+
+        _fake_send = requests.Session.send
+
+        def _patched_fake_send(session, request, **kwargs):
+            try:
+                return _fake_send(session, request, **kwargs)
+            except NoMockAddress:
+                request = _adapter.last_request
+                error_msg = 'Connection refused: {0} {1}'.format(
+                    request.method,
+                    request.url
+                )
+                response = ConnectionError(error_msg)
+                response.request = request
+                raise response
+
+        requests.Session.send = _patched_fake_send
+
+    def start(self):
+        """Overrides default start behaviour by raising ConnectionError instead
+        of custom requests_mock.exceptions.NoMockAddress.
+        """
+        super(HttpMock, self).start()
+        self._patch_real_send()
 
 
 _http_mock = HttpMock()
