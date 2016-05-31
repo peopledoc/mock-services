@@ -4,7 +4,7 @@ machine:
 
 dependencies:
   pre:
-    - pip install -U setuptools
+    - pip install -U 'setuptools<20.2' pip
   override:
     - make develop
 
