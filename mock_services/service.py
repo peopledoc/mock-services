@@ -2,7 +2,11 @@
 import json
 import logging
 import re
-import urlparse
+try:
+    from urllib import parse as urlparse
+except ImportError:
+    # Python 2
+    import urlparse
 
 import attr
 
