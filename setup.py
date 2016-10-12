@@ -33,7 +33,6 @@ setup(
         'attrs',
         'funcsigs',
         'requests-mock',
-        'setuptools>=17.1',
     ],
     extras_require={
         'test': [
