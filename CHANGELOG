@@ -1,10 +1,11 @@
 Changelog
 =========
 
-0.3 (unreleased)
+0.3 (2016-10-13)
 ----------------
 
-- Nothing changed yet.
+- Python 3 compatibility
+- pip update
 
 
 0.2 (2016-01-07)
