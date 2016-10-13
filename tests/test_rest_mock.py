@@ -91,7 +91,7 @@ def should_have_foo(request):
 def duplicate_foo(request):
     data = json.loads(request.body)
     ctx = ResourceContext(hostname='my_fake_service', resource='api')
-    if data['foo'] in [o['foo'] for o in storage.list(ctx)]:
+    if data['foo'] in [o['foo'] for o in storage.to_list(ctx)]:
         raise Http409
 
 
@@ -197,7 +197,7 @@ class RestTestCase(unittest.TestCase):
         r = requests.delete(url + '/1')
         self.assertEqual(r.status_code, 404)
         self.assertEqual(r.headers, {'content-type': 'text/plain'})
-        self.assertEqual(r.content, 'Not Found')
+        self.assertEqual(r.content, b'Not Found')
 
         # add some data
 
@@ -219,7 +219,7 @@ class RestTestCase(unittest.TestCase):
             'content-type': 'text/plain',
             'id': '1',
         })
-        self.assertEqual(r.content, '')
+        self.assertEqual(r.content, b'')
 
         # recheck list get ...
 
@@ -277,7 +277,7 @@ class RestTestCase(unittest.TestCase):
         r = requests.delete(url + '/1')
         self.assertEqual(r.status_code, 204)
         self.assertEqual(r.headers, {'content-type': 'text/plain'})
-        self.assertEqual(r.content, '')
+        self.assertEqual(r.content, b'')
 
         r = requests.get(url + '/1')
         self.assertEqual(r.status_code, 404)
@@ -343,7 +343,7 @@ class RestTestCase(unittest.TestCase):
 
         update_rest_rules([
             {
-                'content': 'Coincoin Content!',
+                'content': b'Coincoin Content!',
                 'method': 'GET',
                 'url': r'^http://my_fake_service',
             }
@@ -351,4 +351,4 @@ class RestTestCase(unittest.TestCase):
         self.assertTrue(start_http_mock())
 
         r = requests.get('http://my_fake_service')
-        self.assertEqual(r.content, 'Coincoin Content!')
+        self.assertEqual(r.content, b'Coincoin Content!')

@@ -1,13 +1,9 @@
 machine:
-  python:
-    version: 2.7.3
-
+  post:
+    - pyenv global 2.7.10 3.4.4 3.5.1
 dependencies:
   pre:
-    - pip install -U 'setuptools<20.2' pip
-  override:
-    - make develop
-
+    - pip install -U pip setuptools
 test:
   override:
-    - make test
+    - tox -r
