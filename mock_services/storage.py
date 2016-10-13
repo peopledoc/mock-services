@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import
+
 import logging
 import uuid
 
@@ -51,12 +53,12 @@ class Storage(object):
     def get(self, ctx):
         return self._registry[ctx.key][ctx.id]
 
-    def list(self, ctx):
-        return self._registry[ctx.key].values()
+    def to_list(self, ctx):
+        return list(self._registry[ctx.key].values())
 
     def next_id(self, id_factory):
         if id_factory == int:
-            return self._counter.next()
+            return next(self._counter)
         if id_factory == uuid.UUID:
             return str(uuid.uuid4())
         logger.error('invalid id factory: %s', id_factory)

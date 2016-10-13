@@ -97,7 +97,7 @@ def validate_data(request, attrs=None, validators=None):
 def list_cb(request, context, url=None, **kwargs):
     resource_context = parse_url(request, url)
     context.status_code = 200
-    return storage.list(resource_context)
+    return storage.to_list(resource_context)
 
 
 @to_json
