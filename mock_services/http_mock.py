@@ -25,7 +25,7 @@ class HttpMock(MockerCore):
         self._adapter = _adapter
 
     def is_started(self):
-        return self._real_send
+        return self._last_send
 
     def set_allow_external(self, allow):
         """Set flag to authorize external calls when no matching mock.
