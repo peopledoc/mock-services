@@ -23,6 +23,7 @@ setup(
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 3.6',
     ],
     keywords=[
         'http',
@@ -37,7 +38,7 @@ setup(
     install_requires=[
         'attrs',
         'funcsigs',
-        'requests-mock',
+        'requests-mock>=1.2.0',
     ],
     extras_require={
         'test': [
