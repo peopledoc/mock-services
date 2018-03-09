@@ -38,7 +38,7 @@ setup(
     install_requires=[
         'attrs',
         'funcsigs',
-        'requests-mock<=1.1.0',
+        'requests-mock<2.0.0',
     ],
     extras_require={
         'test': [
