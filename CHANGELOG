@@ -1,7 +1,7 @@
 Changelog
 =========
 
-0.3.1 (unreleased)
+0.3.1 (2018-03-16)
 ------------------
 
 - Add support for python 3.6 in tests.
