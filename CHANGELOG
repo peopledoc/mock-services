@@ -1,6 +1,12 @@
 Changelog
 =========
 
+0.3.1 (unreleased)
+------------------
+
+- Add support for python 3.6 in tests.
+
+
 0.3 (2016-10-13)
 ----------------
 
